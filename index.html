@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    body {
+        background: #fff;
+        transition: background 0.5s ease-in-out,
+        color 0.2s ease-in-out;
+    }
+    form > div {
+        margin-bottom: 10px;
+        font-size: 25px;
+        display: flex;
+        align-items: center;
+    }
+    form > div > label {
+        margin-right: 10px;
+        margin-left: 10px;
+    }
+    form > div > input {
+        font-size: 25px;
+    }
+    form > div > input[type=checkbox] {
+        width: 25px;
+        height: 25px;
+    }
+    form > div > input[type=radio] {
+        width: 25px;
+        height: 25px;
+    }
+    form > input[type=submit] {
+        font-size: 25px;
+    }
+    #changeThemeButton {
+        font-size: 25px;
+        position: absolute;
+        top: 25px;
+        right: 20px;
+    }
+    #error {
+        font-size: 20px;
+        color: red
+    }
+    p {
+        font-size: 30px;
+    }
+    button {
+        font-size: 25px;
+    }
+</style>
+<body>
+    <button id="changeThemeButton" onclick="changeTheme(this)">night</button>
+    <main id="main">
+    </main>
+    <script>
+        const fillForm = () => {
+            document.getElementById('name').value = 'Ivan'
+            document.getElementById('surname').value = 'Yarlichenko'
+            document.getElementById('email').value = 'iavanya@vanya.ru'
+            document.getElementById('login').value = 'MasterPis'
+            document.getElementById('password').value = 'IJgh7hfg#4t4#$'
+            document.getElementById('repeatPassword').value = 'IJgh7hfg#4t4#$'
+            document.getElementById('acceptRules').checked = true
+            document.getElementById('male').checked = true
+        };
+
+        const regexes = {
+            email: /\S+@\S+\.\S+/,
+            login: /^[a-zA-Z0-9_]{3,}$/,
+            name: /^[a-zA-Z]{3,}$/,
+            password: /^[a-zA-Z0-9!@#$%^&*?]{8,}$/,
+            surname: /^[a-zA-Z]{3,}$/,
+        }
+
+        const changeTheme = e => {
+            if (e.innerHTML === 'night') {
+                e.innerHTML = 'day'
+                document.getElementsByTagName('body')[0].style.background = '#000'
+                document.getElementsByTagName('body')[0].style.color = '#fff'
+            } else {
+                e.innerHTML = 'night'
+                document.getElementsByTagName('body')[0].style.background = '#fff'
+                document.getElementsByTagName('body')[0].style.color = '#000'
+            }
+        }
+
+        const getDataFromForm = () => {
+            let formData = [...document.forms.mainForm.elements]
+            formData = formData.reduce((accum, value) => {
+                switch (value.type) {
+                    case 'text':
+                    case 'email':
+                    case 'password':
+                        return {[value.name]: value.value, ...accum}
+                    case 'checkbox': 
+                        return {[value.name]: value.checked, ...accum}
+                    case 'radio':
+                        if (value.checked) return {[value.name]: value.value, ...accum}
+                        else return accum
+                    default:
+                       return accum
+                }
+                return accum
+            }, {});
+            if (!formData.gender) formData = {...formData, gender: null}
+            return formData
+        }
+
+        const checkDataValid = () => {
+            let error = false
+            const formData = getDataFromForm()
+            const errorEl = document.getElementById('error')
+            errorEl.innerHTML = ''
+            error = !formData.acceptRules || !formData.gender || formData.repeatPassword !== formData.password
+            if (!formData.acceptRules) errorEl.innerHTML += 'rules not accepted<br>'
+            if (!formData.gender) errorEl.innerHTML += 'gender not selected<br>'
+            if (formData.repeatPassword !== formData.password) errorEl.innerHTML += 'passwords do not match<br>'
+            Object.keys(regexes).forEach(element => {
+                if (!regexes[element].test(formData[element])) {
+                    errorEl.innerHTML += `${element} does not meet requirements<br>`
+                    error = true
+                }
+            })
+            if (error) return null
+            return formData
+        }
+
+        const sendData = e => {
+            e.preventDefault()
+            const data = checkDataValid()
+            if (data) {
+                const formData = new FormData()
+                for(let key in data) {
+                    formData.append(key, data[key]);
+                }
+                const req = new XMLHttpRequest()
+                req.open('POST', 'main.php')
+                req.send(formData)
+                req.onreadystatechange = () => {
+                    if (req.readyState === 4 && req.status === 200) {
+                        if(req.responseText.trim() === "Data saved") {
+                            console.log("imhere")
+                            document.forms.mainForm.reset()
+                            goToPage()
+                        }
+                       
+                    }
+                }
+            }
+        }
+
+        const goToAuih = () => {
+            document.getElementById('main').innerHTML = `            
+            <form id="mainForm" name="mainForm">
+                <div>
+                    <label for="name">Name: </label>
+                    <input type="text" autocomplete="off" id="name" name="name">
+                </div>
+                <div>
+                    <label for="surname">Surname: </label>
+                    <input type="text" autocomplete="off" id="surname" name="surname">
+                </div>
+                <div>
+                    <label for="email">Email: </label>
+                    <input type="email" autocomplete="off" id="email" name="email">
+                </div>
+                <div>
+                    <label for="login">Login: </label>
+                    <input type="text" autocomplete="off" id="login" name="login">
+                </div>
+                <div>
+                    <label for="password">Password: </label>
+                    <input type="password" autocomplete="off" id="password" name="password">
+                </div>
+                <div>
+                    <label for="repeatPassword">Repeat password: </label>
+                    <input type="password" autocomplete="off" id="repeatPassword" name="repeatPassword">
+                </div>
+                <div>
+                    <input type="checkbox" id="acceptRules" name="acceptRules" require>
+                    <label for="acceptRules">I accept the rules</label>
+                </div>
+                <div>
+                    <input type="radio" name="gender" id="male" value="male">
+                    <label for="genderMale">Male</label>
+                    <input type="radio" name="gender" id="female" value="female">
+                    <label for="genderMale">Female</label>
+                </div>
+                <p id="error"></p>
+                <input type="submit" onClick="sendData(event)" value="Logon">
+            </form>`
+        }
+
+        const goToPage = () => {
+            document.getElementById('main').innerHTML = `<p>Hello</p><button onclick="goToAuih()">Go to auth</button>`
+        }
+
+        goToAuih();
+        fillForm();
+    </script>
+</body>
+</html>
