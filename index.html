@@ -46,6 +46,10 @@
         font-size: 20px;
         color: red
     }
+    #success {
+        color: green
+    }
+
     p {
         font-size: 30px;
     }
@@ -97,6 +101,9 @@
                     case 'email':
                     case 'password':
                         return {[value.name]: value.value, ...accum}
+                    case 'select-one':
+                        if (value.value == 'pick') return accum
+                        else return {[value.name]: value.value === 'true' ? 1 : 0, ...accum}
                     case 'checkbox': 
                         return {[value.name]: value.checked, ...accum}
                     case 'radio':
@@ -107,7 +114,6 @@
                 }
                 return accum
             }, {});
-            if (!formData.gender) formData = {...formData, gender: null}
             return formData
         }
 
@@ -116,9 +122,10 @@
             const formData = getDataFromForm()
             const errorEl = document.getElementById('error')
             errorEl.innerHTML = ''
-            error = !formData.acceptRules || !formData.gender || formData.repeatPassword !== formData.password
+            error = !formData.acceptRules || !formData.gender || formData.repeatPassword !== formData.password || formData.over18yo === undefined
             if (!formData.acceptRules) errorEl.innerHTML += 'rules not accepted<br>'
             if (!formData.gender) errorEl.innerHTML += 'gender not selected<br>'
+            if (!formData.over18yo) errorEl.innerHTML += 'age not selected<br>'
             if (formData.repeatPassword !== formData.password) errorEl.innerHTML += 'passwords do not match<br>'
             Object.keys(regexes).forEach(element => {
                 if (!regexes[element].test(formData[element])) {
@@ -130,7 +137,28 @@
             return formData
         }
 
-        const sendData = e => {
+        const sendAuthData = e => {
+            e.preventDefault()
+            const data = getDataFromForm()            
+            const formData = new FormData()
+            for(let key in data) {
+                formData.append(key, data[key]);
+            }
+            const req = new XMLHttpRequest()
+            req.open('POST', 'auth.php')
+            req.send(formData)
+            req.onreadystatechange = () => {
+                if (req.readyState === 4 && req.status === 200) {
+                    if(req.responseText.trim() === "Success") {
+                        goToPage()
+                    } else {
+                        document.getElementById('error').innerHTML = 'wrong login or password<br>'
+                    }
+                }
+            }
+        }
+
+        const sendRegData = e => {
             e.preventDefault()
             const data = checkDataValid()
             if (data) {
@@ -139,23 +167,43 @@
                     formData.append(key, data[key]);
                 }
                 const req = new XMLHttpRequest()
-                req.open('POST', 'main.php')
+                req.open('POST', 'register.php')
                 req.send(formData)
                 req.onreadystatechange = () => {
                     if (req.readyState === 4 && req.status === 200) {
                         if(req.responseText.trim() === "Data saved") {
-                            console.log("imhere")
+                            document.getElementById('success').innerHTML += 'Success<br>'
                             document.forms.mainForm.reset()
-                            goToPage()
-                        }
-                       
+                        } else document.getElementById('error').innerHTML = 'Username and email must be unique<br>'
                     }
                 }
             }
         }
+        
 
-        const goToAuih = () => {
-            document.getElementById('main').innerHTML = `            
+        goToAuth = () => {
+            document.getElementById('main').innerHTML = `
+                <button id="goAuth" onclick="goToAuth()">Auth</button>
+                <button id="goReg" onclick="goToReg()">Reg</button>
+                <form id="mainForm" name="mainForm">
+                    <div>
+                        <label for="login">Login: </label>
+                        <input type="text" autocomplete="off" id="login" name="login">
+                    </div>
+                    <div>
+                        <label for="password">Password: </label>
+                        <input type="password" autocomplete="off" id="password" name="password">
+                    </div>
+                    <input type="submit" onClick="sendAuthData(event)" value="Logon">
+                    <p id="error"></p>
+                </form>            
+            `
+        }
+
+        const goToReg = () => {
+            document.getElementById('main').innerHTML = `
+            <button id="goAuth" onclick="goToAuth()">Auth</button>
+            <button id="goReg" onclick="goToReg()">Reg</button>            
             <form id="mainForm" name="mainForm">
                 <div>
                     <label for="name">Name: </label>
@@ -191,16 +239,24 @@
                     <input type="radio" name="gender" id="female" value="female">
                     <label for="genderMale">Female</label>
                 </div>
+                <div>
+                    <select name="over18yo" id="over18yo">
+                        <option value="pick">Pick your age</option>
+                        <option value="true">>= 18 yo</option>
+                        <option value="false">< 18 yo</option>
+                    </select>
+                </div>
                 <p id="error"></p>
-                <input type="submit" onClick="sendData(event)" value="Logon">
+                <p id="success"></p>
+                <input type="submit" onClick="sendRegData(event)" value="Register">
             </form>`
         }
 
         const goToPage = () => {
-            document.getElementById('main').innerHTML = `<p>Hello</p><button onclick="goToAuih()">Go to auth</button>`
+            document.getElementById('main').innerHTML = `<p>Hello</p><button onclick="goToReg()">Go to auth</button>`
         }
 
-        goToAuih();
+        goToReg();
         fillForm();
     </script>
 </body>
