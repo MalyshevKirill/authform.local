@@ -61,6 +61,7 @@
     <button id="changeThemeButton" onclick="changeTheme(this)">night</button>
     <main id="main">
     </main>
+    <script src="https://www.google.com/recaptcha/api.js"></script>
     <script>
         const fillForm = () => {
             document.getElementById('name').value = 'Ivan'
@@ -113,7 +114,7 @@
                        return accum
                 }
                 return accum
-            }, {});
+            }, {})
             return formData
         }
 
@@ -133,6 +134,12 @@
                     error = true
                 }
             })
+            formData = {'g-recaptcha-response': grecaptcha.getResponse(), ...formData}
+            if(!formData['g-recaptcha-response'].length) {
+                error = true
+                errorEl.innerHTML = "captcha did not pass<br>"
+            }
+            grecaptcha.reset();
             if (error) return null
             return formData
         }
@@ -158,21 +165,40 @@
             }
         }
 
+        const auth = () => {
+            const req = new XMLHttpRequest()
+            req.open('POST', 'auth.php')
+            req.send()
+            req.onreadystatechange = () => {
+                if (req.readyState === 4 && req.status === 200) {
+                    if(req.responseText.trim() === "Success") {
+                        goToPage()
+                        return true
+                    } 
+                    return false
+                }
+            }
+        }
+
         const sendRegData = e => {
             e.preventDefault()
             const data = checkDataValid()
             if (data) {
                 const formData = new FormData()
                 for(let key in data) {
-                    formData.append(key, data[key]);
+                    formData.append(key, data[key])
                 }
                 const req = new XMLHttpRequest()
                 req.open('POST', 'register.php')
                 req.send(formData)
-                req.onreadystatechange = () => {
+                req.onreadystatechange = () => {  
                     if (req.readyState === 4 && req.status === 200) {
-                        if(req.responseText.trim() === "Data saved") {
-                            document.getElementById('success').innerHTML += 'Success<br>'
+                        if(req.responseText.trim() === 'Captcha error') {
+                            document.getElementById('error').innerHTML = 'Captcha error on server<br>'
+                            return
+                        }
+                        if(req.responseText.trim() === "Success") {
+                            document.getElementById('success').innerHTML = 'Success<br>'
                             document.forms.mainForm.reset()
                         } else document.getElementById('error').innerHTML = 'Username and email must be unique<br>'
                     }
@@ -246,18 +272,35 @@
                         <option value="false">< 18 yo</option>
                     </select>
                 </div>
+                <div class="g-recaptcha" data-sitekey="6LftzwofAAAAAEwkbU0ybw0rXxMVYhuSOwyqjDPo"></div>
                 <p id="error"></p>
                 <p id="success"></p>
+                
                 <input type="submit" onClick="sendRegData(event)" value="Register">
             </form>`
         }
 
         const goToPage = () => {
-            document.getElementById('main').innerHTML = `<p>Hello</p><button onclick="goToReg()">Go to auth</button>`
+            document.getElementById('main').innerHTML = `<p>Hello</p><button onclick="logout()">Logout</button>`
         }
 
-        goToReg();
-        fillForm();
+        const logout = () => {
+            const req = new XMLHttpRequest()
+            req.open('POST', 'logout.php')
+            req.send()
+            req.onreadystatechange = () => {  
+                if (req.readyState === 4 && req.status === 200) {
+                    goToAuth()
+                }
+            }
+        }
+        
+        (() => {
+            if(!auth()) {
+                goToAuth()
+                //fillForm()
+            }
+        })()
     </script>
 </body>
 </html>
