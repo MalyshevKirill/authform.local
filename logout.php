@@ -1,5 +1,5 @@
 <?php
     if(isset($_COOKIE['auth'])) {
-        setcookie('auth', null);
+        setcookie('auth', null, -1);
     }
 ?>

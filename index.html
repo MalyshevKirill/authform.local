@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="https://www.google.com/recaptcha/api.js"></script>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -61,7 +62,6 @@
     <button id="changeThemeButton" onclick="changeTheme(this)">night</button>
     <main id="main">
     </main>
-    <script src="https://www.google.com/recaptcha/api.js"></script>
     <script>
         const fillForm = () => {
             document.getElementById('name').value = 'Ivan'
@@ -120,7 +120,7 @@
 
         const checkDataValid = () => {
             let error = false
-            const formData = getDataFromForm()
+            let formData = getDataFromForm()
             const errorEl = document.getElementById('error')
             errorEl.innerHTML = ''
             error = !formData.acceptRules || !formData.gender || formData.repeatPassword !== formData.password || formData.over18yo === undefined
@@ -272,12 +272,17 @@
                         <option value="false">< 18 yo</option>
                     </select>
                 </div>
-                <div class="g-recaptcha" data-sitekey="6LftzwofAAAAAEwkbU0ybw0rXxMVYhuSOwyqjDPo"></div>
+                <div id="recaptcha-container"></div>
                 <p id="error"></p>
                 <p id="success"></p>
                 
                 <input type="submit" onClick="sendRegData(event)" value="Register">
             </form>`
+            grecaptcha.ready(() => {
+                grecaptcha.render("recaptcha-container", {
+                    "sitekey": "6LftzwofAAAAAEwkbU0ybw0rXxMVYhuSOwyqjDPo"
+                });
+            });
         }
 
         const goToPage = () => {

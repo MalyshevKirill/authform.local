@@ -1,6 +1,6 @@
 <?php
     $secret = '6LftzwofAAAAAE5uuiBWAu5g8U4UTciu6_uwQeTf';
-    require_once (dirname(__FILE__).'/recaptcha/src/autoload.php');
+    require_once (dirname(__FILE__).'/recaptcha/autoload.php');
     if (isset($_POST['g-recaptcha-response'])) {
         $recaptcha = new \ReCaptcha\ReCaptcha($secret);
         $resp = $recaptcha->verify($_POST['g-recaptcha-response'], $_SERVER['REMOTE_ADDR']);
